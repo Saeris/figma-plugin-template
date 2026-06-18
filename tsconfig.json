@@ -1,10 +1,17 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "@saeris/configs/tsconfig",
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules", "dist"],
-  "compilerOptions": {
-    // project-local paths live here, not in the shared base
-    "outDir": "./dist",
-    "rootDir": "."
-  }
+  // The two threads have incompatible lib/types (sandbox vs. DOM+React), so each
+  // has its own tsconfig (src/main, src/ui) that the type-aware linter resolves by
+  // proximity. This root config covers only the environment-agnostic surface: the
+  // IPC core (minus the thread-specific channel/react modules) and its tests
+  // (Node + Vitest globals, no DOM/figma).
+  "include": ["src/ipc/**/*.ts", "src/__tests__/**/*.ts", "*.ts"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/ipc/react.ts",
+    "src/ipc/channel.ui.ts",
+    "src/ipc/channel.main.ts"
+  ]
 }

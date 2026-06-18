@@ -91,8 +91,9 @@ cypress/e2e/build
 .vercel/*
 !.vercel/package.json
 
-# Claude Code local agent state
-.claude/
+# Claude Code local agent state — but keep committed skills
+.claude/*
+!.claude/skills/
 
 # CPU profiles emitted by scripts/profile.mjs
 profiles/

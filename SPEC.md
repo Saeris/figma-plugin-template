@@ -3,7 +3,7 @@
 > **Status:** Draft / pre-implementation. This document records the architecture
 > decisions, research findings, and rationale for converting this repository
 > (originally [`Saeris/library-template`](https://github.com/Saeris/library-template))
-> into an opinionated Figma plugin template. It is the source of truth for *why*
+> into an opinionated Figma plugin template. It is the source of truth for _why_
 > the template is shaped the way it is. Once implemented, the user-facing subset
 > moves into `README.md` / `ARCHITECTURE.md`; this file remains the decision log.
 
@@ -41,7 +41,7 @@ publish to npm":
   still references an unrelated package (`valimock`).
 
 **A Figma plugin is architecturally the opposite of a library.** A library is
-*consumed* by other code via `exports`; a plugin is a **deployed application** shipped
+_consumed_ by other code via `exports`; a plugin is a **deployed application** shipped
 as a `manifest.json` + bundled artifacts that the Figma host loads. This changes the
 build target, the entry config, and the entire release pipeline — so the npm-publishing
 scaffolding is removed rather than extended.
@@ -60,10 +60,10 @@ and the official [`figma/plugin-samples`](https://github.com/figma/plugin-sample
 A plugin runs as **two isolated contexts** that share no runtime — only a `postMessage`
 channel passing structured-clonable data:
 
-| Thread | Globals | Has | Lacks | Built to |
-| --- | --- | --- | --- | --- |
-| **Main / sandbox** (`manifest.main`) | `figma`, `__html__` | the Figma scene API | **no DOM, no `fetch`, no `setTimeout`** | one JS file (`dist/code.js`) |
-| **UI** (`manifest.ui`) | `window`, DOM | full browser APIs | **no `figma`** | one inlined HTML (`dist/ui.html`) |
+| Thread                               | Globals             | Has                 | Lacks                                   | Built to                          |
+| ------------------------------------ | ------------------- | ------------------- | --------------------------------------- | --------------------------------- |
+| **Main / sandbox** (`manifest.main`) | `figma`, `__html__` | the Figma scene API | **no DOM, no `fetch`, no `setTimeout`** | one JS file (`dist/code.js`)      |
+| **UI** (`manifest.ui`)               | `window`, DOM       | full browser APIs   | **no `figma`**                          | one inlined HTML (`dist/ui.html`) |
 
 - Main → UI: `figma.ui.postMessage(msg)`; UI receives via `window.onmessage` (`event.data.pluginMessage`).
 - UI → Main: `parent.postMessage({ pluginMessage: msg }, "*")`; main receives via `figma.ui.onmessage`.
@@ -95,7 +95,7 @@ in full. Notable findings:
 - **Split source dirs** `plugin-src/` + `ui-src/`, each with **its own `tsconfig.json`**
   (incompatible `lib`: `es6` + figma typings vs. `DOM` + `react-jsx`). This per-thread
   tsconfig split is universal across the ecosystem.
-- UI build inlines *everything*: `assetsInlineLimit: 100000000`, `cssCodeSplit: false`,
+- UI build inlines _everything_: `assetsInlineLimit: 100000000`, `cssCodeSplit: false`,
   `inlineDynamicImports: true` — because Figma loads exactly one HTML file.
 - **Messaging is untyped** (stringly-typed `msg.type` switch). This is the weak point
   we improve on.
@@ -109,25 +109,25 @@ Surveyed: Figma's official samples, [`create-figma-plugin`](https://yuanqing.git
 and [Tokens Studio](https://github.com/tokens-studio/figma-plugin) (largest production
 React plugin).
 
-| Practice | Consensus source |
-| --- | --- |
-| Separate `main`/`ui` source dirs, per-thread tsconfig | Official samples, create-figma-plugin |
-| UI bundled to a single inlined HTML (`viteSingleFile`) | Official Vite sample, Bolt Figma |
-| `documentAccess: "dynamic-page"` + declared `networkAccess` | Required for new plugins |
-| `themeColors: true` + `--figma-color-*` vars for theming | Official theming API |
-| Watch-rebuild + Figma hot-reload (no true HMR) | Forums, Bolt, Ditto template |
-| `manifest.json` generated from one config source | create-figma-plugin |
-| `@figma/plugin-typings` (v1.124) via `typeRoots`/`types` | All |
+| Practice                                                    | Consensus source                      |
+| ----------------------------------------------------------- | ------------------------------------- |
+| Separate `main`/`ui` source dirs, per-thread tsconfig       | Official samples, create-figma-plugin |
+| UI bundled to a single inlined HTML (`viteSingleFile`)      | Official Vite sample, Bolt Figma      |
+| `documentAccess: "dynamic-page"` + declared `networkAccess` | Required for new plugins              |
+| `themeColors: true` + `--figma-color-*` vars for theming    | Official theming API                  |
+| Watch-rebuild + Figma hot-reload (no true HMR)              | Forums, Bolt, Ditto template          |
+| `manifest.json` generated from one config source            | create-figma-plugin                   |
+| `@figma/plugin-typings` (v1.124) via `typeRoots`/`types`    | All                                   |
 
-**`create-figma-plugin`** — borrow the *ideas* (config-as-single-source, typed event
+**`create-figma-plugin`** — borrow the _ideas_ (config-as-single-source, typed event
 ergonomics, Figma-native components), **skip the framework**: it is Preact-first
 (swaps React→`preact/compat` at build) with its own `build-figma-plugin` CLI, which
 conflicts with our Vite+ + React choice.
 
 **Skills landscape** — checked skills.sh / officialskills.sh and Figma's
 `community-resources/agent_skills` (40+ skills). **Every existing Figma skill is about
-*using* Figma via the MCP server** (design generation, design systems, Code Connect).
-**None teach plugin *authoring*** (manifest, sandbox/UI split, postMessage, plugin
+_using_ Figma via the MCP server** (design generation, design systems, Code Connect).
+**None teach plugin _authoring_** (manifest, sandbox/UI split, postMessage, plugin
 lifecycle). This template fills that gap with **original** skills rather than
 re-bundling existing ones.
 
@@ -144,7 +144,7 @@ probing `vp`** (see §5.4).
   to upstream Vite** (Vite 8 + Rolldown): `build`, `plugins`, `rollupOptions`, `--mode`,
   `--watch` all behave as documented by Vite.
 - `vp pack` is **tsdown / library-only** — correctly dropped (a plugin is not a library).
-- **You cannot override `build`/`dev` via `package.json` scripts.** `vp build` *always*
+- **You cannot override `build`/`dev` via `package.json` scripts.** `vp build` _always_
   runs the built-in Vite build; a `package.json` "build" script is reachable only via
   `vp run build`. Orchestration must live in **`run.tasks`** in `vite.config.ts`. A task
   name cannot exist in both `package.json` and `vite.config.ts`.
@@ -153,7 +153,7 @@ probing `vp`** (see §5.4).
 
 The two Figma artifacts have **mutually incompatible build settings**:
 
-- **UI** needs `viteSingleFile()`, which *globally* mutates the build
+- **UI** needs `viteSingleFile()`, which _globally_ mutates the build
   (`inlineDynamicImports`, `cssCodeSplit: false`, huge `assetsInlineLimit`) and expects
   an HTML input.
 - **Sandbox** must be a single plain JS file (no HTML, no DOM), ES2020, IIFE.
@@ -165,18 +165,39 @@ collision (not the input count) forces **two passes**. But both passes live in *
 ```ts
 // vite.config.ts (shape; final values set during implementation)
 export default defineConfig(({ mode }) => {
-  const base = { lint, fmt, test: { /* node env for ipc tests */ } };
+  const base = {
+    lint,
+    fmt,
+    test: {
+      /* node env for ipc tests */
+    }
+  };
   if (mode === "main")
-    return { ...base, build: {
-      target: "es2020", emptyOutDir: false,
-      lib: { entry: "src/main/code.ts", formats: ["iife"], fileName: () => "code.js" },
-    }};
+    return {
+      ...base,
+      build: {
+        target: "es2020",
+        emptyOutDir: false,
+        lib: {
+          entry: "src/main/code.ts",
+          formats: ["iife"],
+          fileName: () => "code.js"
+        }
+      }
+    };
   // mode === "ui"
-  return { ...base, root: "src/ui",
+  return {
+    ...base,
+    root: "src/ui",
     plugins: [react(), viteSingleFile()],
-    build: { target: "esnext", emptyOutDir: false,
-      cssCodeSplit: false, assetsInlineLimit: 100_000_000,
-      rollupOptions: { output: { inlineDynamicImports: true } } }};
+    build: {
+      target: "esnext",
+      emptyOutDir: false,
+      cssCodeSplit: false,
+      assetsInlineLimit: 100_000_000,
+      rollupOptions: { output: { inlineDynamicImports: true } }
+    }
+  };
 });
 ```
 
@@ -216,7 +237,7 @@ Rather than assume, `vp` was probed directly:
   config printed `PROBE_FN mode=ui command=build`.
 - **`--mode` plumbs through** to the function config (`mode=ui`).
 - **`root: "src/ui"` + html entry builds correctly** — a probe emitted `dist/index.html`
-  + an `assets/*.js` chunk that `viteSingleFile()` then inlines.
+  - an `assets/*.js` chunk that `viteSingleFile()` then inlines.
 
 ---
 
@@ -227,20 +248,20 @@ cast-based event channel**. We instead ship a **tRPC-like, type-safe bridge**, m
 on the architecture of **`@discordkit/electron`** (`C:\GitHub\@saeris\discordkit`,
 PR [#60](https://github.com/discordkit/discordkit/pull/60)).
 
-> **Why Electron's pattern ports here:** Electron and Figma plugins are the *same
-> problem* — a privileged process (Electron main / Figma sandbox) and a sandboxed UI
+> **Why Electron's pattern ports here:** Electron and Figma plugins are the _same
+> problem_ — a privileged process (Electron main / Figma sandbox) and a sandboxed UI
 > (renderer / iframe) exchanging only structured-clonable messages. DiscordKit's
-> insight — *don't expose the raw emitter; expose a typed `call`/`on` bridge and project
-> state as Signals* — transfers almost 1:1.
+> insight — _don't expose the raw emitter; expose a typed `call`/`on` bridge and project
+> state as Signals_ — transfers almost 1:1.
 
 ### 6.1 Primitives (ported)
 
-| DiscordKit primitive | Role | Figma adaptation |
-| --- | --- | --- |
-| `BridgeIo` = `call` + `on` | `call` = request→reply RPC; `on` = event sub → `Unsubscribe` | same surface, new transport (§6.2) |
-| `Subscription = (() => void) & Disposable` | unsubscribe fn that's also `using`-compatible (`Object.assign(fn, { [Symbol.dispose]: fn })`) | same shim |
-| `statusSignal` / `asyncSignal` | wrap push events as pull `Signal.State`; `asyncSignal` adds `{ loading, data, error }` + monotonic stale-run guard | wrap plugin→UI messages; `asyncSignal` for `call` reads |
-| `useSyncExternalStore` adapter | framework-agnostic signal → React | identical in UI thread |
+| DiscordKit primitive                       | Role                                                                                                               | Figma adaptation                                        |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| `BridgeIo` = `call` + `on`                 | `call` = request→reply RPC; `on` = event sub → `Unsubscribe`                                                       | same surface, new transport (§6.2)                      |
+| `Subscription = (() => void) & Disposable` | unsubscribe fn that's also `using`-compatible (`Object.assign(fn, { [Symbol.dispose]: fn })`)                      | same shim                                               |
+| `statusSignal` / `asyncSignal`             | wrap push events as pull `Signal.State`; `asyncSignal` adds `{ loading, data, error }` + monotonic stale-run guard | wrap plugin→UI messages; `asyncSignal` for `call` reads |
+| `useSyncExternalStore` adapter             | framework-agnostic signal → React                                                                                  | identical in UI thread                                  |
 
 ### 6.2 The one thing we invent: a correlation-id transport
 
@@ -345,19 +366,19 @@ No plugin-authoring skill exists in the ecosystem (§4), so we create four:
 
 ## 11. Decisions log (confirmed with the user)
 
-| # | Decision | Choice |
-| --- | --- | --- |
-| 1 | UI stack | React + Vite, single-file inlined |
-| 2 | UI components | Include `figma-kit` now; React-Aria fork later |
-| 3 | Build tool | `vp build` two-pass (Vite for both threads); drop tsdown/`vp pack`/dts |
-| 4 | npm scaffolding | Strip (`exports`, `publishConfig`, `files`, `sideEffects`, OIDC, Bumpy) |
-| 5 | CI/CD | Build + validate + zip GitHub Release artifact; manual Community publish |
-| 6 | Skills | Four original authoring skills |
-| 7 | Build config files | **One** mode-branched `vite.config.ts` (no `vite.main.ts`/`vite.ui.ts`) |
-| 8 | Build/dev override | Via `run.tasks` (not `package.json` scripts) |
-| 9 | Config branching | `defineConfig(({ mode }) => …)` + `--mode` — **empirically verified** |
-| 10 | Manifest generation | Separate cached `manifest` task running `scripts/manifest.mjs` |
-| 11 | IPC architecture | tRPC-like typed bridge + Signals + `using`, ported from `@discordkit/electron` |
+| #   | Decision            | Choice                                                                         |
+| --- | ------------------- | ------------------------------------------------------------------------------ |
+| 1   | UI stack            | React + Vite, single-file inlined                                              |
+| 2   | UI components       | Include `figma-kit` now; React-Aria fork later                                 |
+| 3   | Build tool          | `vp build` two-pass (Vite for both threads); drop tsdown/`vp pack`/dts         |
+| 4   | npm scaffolding     | Strip (`exports`, `publishConfig`, `files`, `sideEffects`, OIDC, Bumpy)        |
+| 5   | CI/CD               | Build + validate + zip GitHub Release artifact; manual Community publish       |
+| 6   | Skills              | Four original authoring skills                                                 |
+| 7   | Build config files  | **One** mode-branched `vite.config.ts` (no `vite.main.ts`/`vite.ui.ts`)        |
+| 8   | Build/dev override  | Via `run.tasks` (not `package.json` scripts)                                   |
+| 9   | Config branching    | `defineConfig(({ mode }) => …)` + `--mode` — **empirically verified**          |
+| 10  | Manifest generation | Separate cached `manifest` task running `scripts/manifest.mjs`                 |
+| 11  | IPC architecture    | tRPC-like typed bridge + Signals + `using`, ported from `@discordkit/electron` |
 
 ---
 

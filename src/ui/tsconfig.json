@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@saeris/configs/tsconfig",
+  "compilerOptions": {
+    // The UI is a real browser iframe: full DOM, React JSX, but no `figma` global.
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["vite/client"]
+  },
+  // UI bundles the IPC core + its own channel + the React adapter, but NOT the
+  // main channel (references `figma.ui`).
+  "include": ["**/*.ts", "**/*.tsx", "../ipc/**/*.ts"],
+  "exclude": ["../ipc/channel.main.ts"]
+}

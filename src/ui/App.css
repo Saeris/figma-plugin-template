@@ -1,0 +1,57 @@
+/* Body/theme. `showUI({ themeColors: true })` adds `figma-light`/`figma-dark` to
+   <html> and defines the --figma-color-* vars referenced throughout. */
+body {
+  margin: 0;
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  color: var(--figma-color-text);
+  background: var(--figma-color-bg);
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.app__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.app__hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--figma-color-text-secondary);
+}
+
+.app__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--figma-color-text-secondary);
+}
+
+.app__selection {
+  margin: 0;
+  font-size: 11px;
+  color: var(--figma-color-text-secondary);
+}
+
+.app__selection strong {
+  color: var(--figma-color-text);
+}
+
+.app__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}

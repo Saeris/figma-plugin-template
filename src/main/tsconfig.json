@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@saeris/configs/tsconfig",
+  "compilerOptions": {
+    // The sandbox has the `figma` global but no DOM. `@figma/plugin-typings` is
+    // a global-augmentation package, loaded via `types` (not imported). `ESNext`
+    // lib keeps `Symbol.dispose` typed for the disposable; the build downlevels
+    // the emitted code.js to the sandbox target.
+    "lib": ["ESNext"],
+    "types": ["@figma/plugin-typings"]
+  },
+  // Main bundles the environment-agnostic IPC core + its own channel, but NOT the
+  // UI-only modules (react.ts, channel.ui.ts) — those reference `window`/react and
+  // are tree-shaken out of code.js.
+  "include": ["**/*.ts", "../ipc/**/*.ts"],
+  "exclude": ["../ipc/react.ts", "../ipc/channel.ui.ts"]
+}
