@@ -1,3 +1,5 @@
+<!--GENERAL RULES START-->
+
 # General Rules of Contribution
 
 These rules apply to every task in this project unless explicitly overridden.
@@ -72,6 +74,64 @@ If you genuinely think a convention is harmful, surface it. Don't fork silently.
 "Completed" is wrong if anything was skipped silently.
 "Tests pass" is wrong if any were skipped.
 Default to surfacing uncertainty, not hiding it.
+
+<!--GENERAL RULES END-->
+
+<!--FIGMA PLUGIN TEMPLATE START-->
+
+# Building in This Figma Plugin Template
+
+This repo is (or began as) a **Figma plugin template** (forked via GitHub "Use this template"). The hard wiring is done; your job is to build a plugin on top of it. Read this before writing code — it captures the patterns we landed on and the toolchain subtleties that are easy to trip over. For task-specific depth, the `.claude/skills/figma-plugin-*` skills load on demand; `SPEC.md` captures the full decision log; the README is the human-facing intro. Expect both to change significantly after the initial commit.
+
+## The two-thread mental model (get this wrong and nothing works)
+
+A plugin is **two isolated contexts that share no runtime** — only a message channel:
+
+- **`src/main/` (sandbox)** has `figma` + `__html__`, **no DOM/`window`/`fetch`**. Runs in QuickJS (ES2020). Builds to `dist/code.js`. Put document reads/writes here.
+- **`src/ui/` (iframe)** has the DOM + React, **no `figma`**. Builds to the single inlined `dist/index.html`. Put rendering here.
+
+`figma is not defined` means UI code touched `figma`; `document is not defined` means sandbox code touched the DOM. Move it to the right thread and talk over the bridge.
+
+## How to extend the plugin
+
+**Never hand-roll `postMessage` or a `msg.type` switch.** Everything goes through the typed bridge in `src/ipc/`:
+
+1. Declare the API in **`src/ipc/contract.ts`** — `Procedures` (request→reply the UI `call`s) and `Events` (push the main thread `emit`s). This is the single source of truth; the bridge/transport/signals are all generic over it.
+2. Handle procedures / emit events in **`src/main/code.ts`** via `bridge.handle(...)` / `bridge.emit(...)`.
+3. Consume in **`src/ui/`** via `bridge.call(...)` and `bridge.on(...)`; wrap pushed state with `eventSignal` + `useSignal`, and async reads with `asyncSignal`.
+
+Types flow end-to-end from the contract — a wrong name/payload is a compile error. **Do not edit `transport.ts`/`bridge.ts`/`channel.*` to add a feature** — only `contract.ts` + the two thread entries. Touch the bridge internals only to change the transport mechanism itself.
+
+### Conventions that are load-bearing
+
+- **Only structured-clonable data crosses the bridge.** No functions, class instances, or Figma node objects — pass ids/plain data, re-resolve nodes in the sandbox.
+- **`documentAccess: "dynamic-page"`** is set, so use the **async** `figma.*` API (`getNodeByIdAsync`, `loadAllPagesAsync`) for anything off the current page.
+- **The two type-erasure casts in `bridge.ts`/`transport`** (each marked with a documented `oxlint-disable`) are the intentional `unknown`→contract seam. If you find yourself adding `as` casts elsewhere in `src/ipc`, you're probably working around the contract instead of extending it — stop and reconsider.
+- **`using` is safe in the UI; in the sandbox** `code.ts` calls `installDisposeShim()` first, but prefer plain `const off = …; off()` there if unsure.
+- **Theme with `--figma-color-*` variables only** (no hard-coded colors); the vendored `src/ui/components/` are the seed set — extend them, don't add a dead component-lib dependency.
+
+## Toolchain subtleties (Vite+ `vp`)
+
+- **Build/dev are `run.tasks` in `vite.config.ts`, NOT `package.json` scripts.** Bare `vp build` runs a single raw Vite pass; the orchestrated two-pass build is **`vp run build`** (`build:main` → `build:ui` → `manifest`). Same for `vp run dev`. A task name can't exist in both `package.json` and `vite.config.ts`.
+- **One mode-branched config, not two files.** `vite.config.ts` is `defineConfig(({ mode }) => …)`: `--mode main` → `dist/code.js` (lib/IIFE), `--mode ui` → `dist/index.html` (`viteSingleFile`, everything inlined). **`vp test` runs with `mode === "test"`** — keep the test/base branch free of the UI `root`, or Vitest won't find `src/__tests__`.
+- **`dependsOn` references task names, not commands.** That's why a `lint` task exists in `run.tasks` (so `build` can depend on it).
+- **Dependencies may be age gated by global package manager settings.** When bumping, pick the highest **non-quarantined** version (`vp add` fails loudly on a quarantined one — step down a patch).
+- **`@vitejs/plugin-react` needs a `vite` specifier** even though Vite+ vends Vite internally — hence `"vite": "catalog:"` in `package.json`. Don't remove it.
+- **`@saeris/configs` has a rule conflict** (`promise-function-async` vs. `require-await`) for thin promise-returning wrappers; we relaxed `require-await` via `mergeLint` in `vite.config.ts`. If a new thin async wrapper trips it, that override already covers you — don't re-fight it per-function.
+- **Run `vp check --fix` then a plain `vp check`** to confirm; the success bar is **0 errors and 0 warnings** (we resolved warnings rather than suppress them — match that).
+
+## Manifest & shipping
+
+- Edit **`figma.manifest.ts`** (typed source), never `dist/manifest.json` (generated by `scripts/manifest.mjs`). Replace the placeholder `id` with the real one Figma assigns on first publish.
+- There's no Figma publish API: CI builds + attaches `plugin.zip`; publishing is manual in the desktop app (see the `figma-plugin-publishing` skill).
+
+## Verify before claiming done
+
+`vp check` (0/0) · `vp test` (all green) · `vp run build` (emits
+`dist/{code.js,index.html,manifest.json}`). The IPC contract test in
+`src/__tests__/` is the load-bearing test — keep it meaningful as the contract grows.
+
+<!--FIGMA PLUGIN TEMPLATE END-->
 
 <!--VITE PLUS START-->
 

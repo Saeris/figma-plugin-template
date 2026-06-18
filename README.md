@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎨 Figma Plugin Template
+# 🖼 Figma Plugin Template
 
 [![CI status][ci_badge]][ci]
 
