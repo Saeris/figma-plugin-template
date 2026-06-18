@@ -8,7 +8,7 @@ on:
 
 jobs:
   ci:
-    name: Check & Test (Node ${{ matrix.node-version }})
+    name: Check, Test & Build (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -27,3 +27,5 @@ jobs:
 
       - run: vp check
       - run: vp test
+      # Build all three plugin artifacts so a broken build fails CI, not release.
+      - run: vp run build
